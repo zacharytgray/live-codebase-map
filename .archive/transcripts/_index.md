@@ -1,31 +1,22 @@
 # Conversation Transcripts Archive
 
-This directory contains verbatim transcripts of development conversations for live-codebase-map. Each transcript is a complete record of dialogue, tool usage, and outcomes.
+This index is a DERIVED build artifact. Do not hand-edit — it is regenerated
+from the per-session manifests in `.archive/sessions/*/manifest.json` and the
+per-stream files in `.archive/streams/*.json`. Two regenerations are
+byte-identical.
 
-## Latest Conversation
-**Current**: 0
+## Streams
 
-## Transcript Format
-
-Transcripts are stored as JSON documents containing:
-- `project_id`: Project identifier
-- `conversation_id`: Unique conversation ID (YYYYMMDD-NNN-title-in-kebab-case)
-- `conversation_number`: Session number from initialization
-- `date`: Date and time of conversation (ISO 8601)
-- `participants`: Array of participant information
-- `dialogue`: Verbatim conversation with tool calls
-- `outcomes`: Files created/modified and decisions made
-
-## How to Use This Directory
-
-- **Transcripts**: Full verbatim records in `.archive/transcripts/` — read for complete context
-- **Session Notes**: In-flight learnings in `.archive/session-notes/` — update throughout each session
-- **Handoffs**: Forward-looking re-entry points in `.archive/session-handoff/` — read first when resuming
-
-## Maintenance
-
-Transcripts are managed via the session lifecycle:
-1. `/llm-dev:init-session` writes a `### NNN - [In Progress]` placeholder entry and creates the session-notes file
-2. `/llm-dev:end-session` archives the conversation JSON, replaces the placeholder with the real entry, and writes the session-handoff
+| Slug | Name | Status | Claim | Since | Last Touched | Last Handoff | Branch | Worktree |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| main | Main | active | 8e169648-7097-4ce2-9970-ee8ba4266fd4 | 2026-07-16T10:46Z | 2026-07-16 |  |  |  |
 
 ## Transcript Index
+
+### 001 - (untitled)
+**File**: (no transcript)
+**Started**: 2026-07-16T15:46:05Z
+**Ended**: [In Progress]
+**Stream**: main
+**Participants**: Zachary Gray, claude-fable-5
+**Session**: 8e169648-7097-4ce2-9970-ee8ba4266fd4

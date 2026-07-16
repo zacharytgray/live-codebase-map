@@ -19,9 +19,19 @@ These are load-bearing. Don't trade them away for convenience:
 5. **Provenance on every fact.** Each event carries turn id, commit hash, and timestamp; the view must be able to show how fresh any rendered fact is.
 6. **Capture runs outside the agent's write scope.** The hook config and capture process must not be editable by the agent being observed.
 
+## Decisions (session 001, 2026-07-16)
+
+- **Shape: A now, B-ready schema.** V1 is the pure human view. No agent-facing code, but the event schema and SQLite cache must not preclude an MCP query surface ("what depends on X?") bolting on without migration.
+- **View surface: browser on a second monitor.** Auto-refreshing localhost page; the bet is that it's already on screen when the turn ends.
+- **Study mode: not in v1.** Passive delta map first, instrumented. Because of this, open/dwell logging is hard v1 scope, not a nice-to-have — it's what decides whether study mode gets built.
+- **Stack: TypeScript end-to-end.** Node tree-sitter bindings for capture; D3/Cytoscape for the view.
+- **Capture: Stop hook only in v1.** No file watcher yet; human-edit staleness is accepted for the self-experiment.
+- **Annotations: both sources, compared.** Emit the `MAP:` note convention AND harvest turn text; every annotation carries its `origin`; the dogfood week decides which survives.
+- **Dogfood: this repo itself,** from the first line of implementation code.
+
 ## Current phase
 
-Schema design — no implementation yet. Don't scaffold app code, pick frameworks, or add dependencies unless explicitly asked. The current deliverable is a good `docs/event-schema.md`.
+Schema design — no implementation yet. Don't scaffold app code or add dependencies unless explicitly asked. The current deliverable is a good `docs/event-schema.md`. Build order lives in `CURRENT-TODOs.md`.
 
 ## How to verify
 

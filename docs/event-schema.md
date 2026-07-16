@@ -72,3 +72,9 @@ Edge types start with these three. `calls` is best-effort from tree-sitter (no t
 3. Compaction story — the log grows forever by design; when does a snapshot event (`snapshot.graph`) become worth it so cold-start replay stays fast?
 4. Is `calls` worth capturing in v0, or do `imports` edges alone carry the MVP treemap/graph view?
 5. Where does the `MAP:` note convention get parsed — hook side (structured at capture) or store side (raw text event, parsed at read)? Leaning: hook side, keep the log clean.
+6. **B-readiness (new, from session 001):** the schema must not preclude an MCP query surface later. What query patterns must the SQLite cache serve cheaply — "what depends on X", "what changed since turn N", "summarize module Y's edges"? Does anything about the event shape change to support them, or is this purely an index concern?
+
+## v1 notes (session 001 decisions)
+
+- Capture fires on `Stop` only; `source: file-watcher` is reserved but unused in v1.
+- Both annotation origins (`map-note`, `turn-text`) ship in v1 and get quality-compared after the dogfood week — the `origin` field is load-bearing, not decorative.
