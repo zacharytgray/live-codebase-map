@@ -1,0 +1,1 @@
+`tree-sitter-swift.wasm` — built 2026-07-18 from npm `tree-sitter-swift@0.7.1` sources with `tree-sitter-cli@0.26.11` (`tree-sitter build --wasm`, wasi-sdk 29 toolchain); vendored because the prebuilt in `tree-sitter-wasms@0.1.13` uses the legacy `dylink` ABI that `web-tree-sitter@0.26.11` rejects.

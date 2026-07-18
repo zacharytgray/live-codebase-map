@@ -15,6 +15,8 @@
 - Structured decision quiz (AskUserQuestion, 4 forks per round) moved planning fast: 8 decisions locked in two rounds. Zach engaged with the trade-off descriptions directly.
 - Scout-before-build paid off twice on 2026-07-18: (1) docs scout found the transcript format is undocumented + lags at Stop, forcing the PostToolUse-buffer amendment BEFORE any code assumed transcript parsing; (2) tree-sitter scout empirically reproduced the native-binding build failure on Node 26, avoiding a dead-end dependency. Both scouts ran in parallel; ~5 min wall clock.
 - Orchestrator/implementer split (Fable orchestrating, Opus subagents): capture core landed in one shot, 27 tests, ~0.2s/turn; view landed in one shot, 37 tests total. Fresh-context verifier caught one real design flaw the implementer missed (span in the change predicate → line-shift churn in claim-vs-change); fixed at orchestrator level with a regression test.
+- Gated risky steps work: the Swift-wasm implementer hit the ABI wall (stale `dylink` section in tree-sitter-wasms), STOPPED as instructed, and reported options instead of improvising — one SendMessage authorized the vendored build and the same agent finished with context intact.
+- Orchestrator eyeballing between agent rounds matters: the first graph render passed all automated checks (52 tests, determinism, invariants) but was visually unusable — 92 nodes scaled to confetti. Only looking at the real render caught it; one feedback round (test-file filter, fit-to-width, node geometry measured against real dagre dims) fixed it. Lesson: "tests green" ≠ "communicates"; screenshot the real thing before calling a view done.
 
 ## Lessons Learned
 
@@ -29,6 +31,8 @@
 - Recommended shipping one micro-engagement element in v1; Zach chose passive-first with instrumentation instead — consistent with the METR "measure actual behavior, not vibes" caution. Instrumentation (opens/dwell logging) is therefore hard v1 scope.
 
 ## Other Observations
+
+- **First real engagement datapoint (2026-07-18):** Zach's unprompted reaction to the demo treemap — "I just see a bunch of shapes. It's really abstract… I'm having trouble seeing relationships and functionality at a glance," and he independently reinvented the dependency-graph view ("arrows showing dependencies from one function to another"). Two lessons: (1) the treemap communicates mass+recency but NOT relationships, and relationships are what a newcomer reaches for first; (2) the `imports`/`defines` edges were captured from day one but under-rendered — the data model was ahead of the view. Response: graph view promoted to first-class (Map/Graph toggle), `codemap scan` for cold-start on real repos, Swift + `references` edges so his actual codebases (HyprMac, Sidenote — both Swift) are mappable. Also worth remembering: demo-data demos undersell this tool; always show it on a repo the viewer knows.
 
 - Decisions locked this session (also recorded in CLAUDE.md):
   1. Shape A now with a B-ready schema (MCP surface must bolt on without migration, but no agent-facing code in v1)

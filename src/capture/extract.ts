@@ -33,6 +33,8 @@ export interface FileExtract {
   entities: ExtractedEntity[];
   imports: ImportRequest[];
   defines: ExtractEdge[]; // file -> each symbol
+  declaredTypes: string[]; // swift: type names declared here (feeds the references table)
+  typeRefs: string[]; // swift: type names used here (annotations, inheritance, ctor calls)
 }
 
 export function toShape(e: ExtractedEntity): EntityShape {
@@ -65,6 +67,8 @@ export async function extractFile(relPath: string, source: string): Promise<File
   try {
     const entities: ExtractedEntity[] = [];
     const imports: ImportRequest[] = [];
+    const declaredTypes: string[] = [];
+    const typeRefs: string[] = [];
 
     const lines = countLines(source);
     entities.push({
@@ -79,13 +83,14 @@ export async function extractFile(relPath: string, source: string): Promise<File
     });
 
     if (grammar === "python") walkPython(tree.rootNode, relPath, entities, imports);
+    else if (grammar === "swift") walkSwift(tree.rootNode, relPath, entities, declaredTypes, typeRefs);
     else walkJsTs(tree.rootNode, relPath, entities, imports);
 
     const defines: ExtractEdge[] = entities
       .filter((e) => e.type !== "file")
       .map((e) => ({ from: relPath, to: e.id, type: "defines" as const }));
 
-    return { path: relPath, entities, imports, defines };
+    return { path: relPath, entities, imports, defines, declaredTypes, typeRefs };
   } finally {
     tree.delete();
   }
@@ -230,6 +235,94 @@ function walkPython(
     }
     // plain `import x` is absolute -> skipped
   }
+}
+
+// ---- swift ----
+// node types checked empirically against the vendored tree-sitter-swift 0.7.1 grammar:
+// class/struct/enum/actor/extension all parse as class_declaration (name field is a
+// type_identifier, or a user_type for extensions); protocols are protocol_declaration.
+// imports are deliberately ignored — references edges replace them for swift.
+
+function swiftPrivate(node: TSNode): boolean {
+  const mods = children(node).find((c) => c.type === "modifiers");
+  return mods ? /\b(private|fileprivate)\b/.test(mods.text) : false;
+}
+
+function swiftFnName(node: TSNode): string | null {
+  const named = node.childForFieldName("name");
+  if (named) return named.text;
+  return children(node).find((c) => c.type === "simple_identifier")?.text ?? null;
+}
+
+function walkSwift(
+  root: TSNode,
+  relPath: string,
+  entities: ExtractedEntity[],
+  declaredTypes: string[],
+  typeRefs: string[],
+): void {
+  const seen = new Set<string>(); // extension of a same-file type reuses its entity id
+  const pushEntity = (e: ExtractedEntity) => {
+    if (seen.has(e.id)) return;
+    seen.add(e.id);
+    entities.push(e);
+  };
+
+  for (const child of children(root)) {
+    if (child.type === "class_declaration") {
+      const nameNode = child.childForFieldName("name");
+      if (!nameNode) continue;
+      const isExtension = nameNode.type === "user_type";
+      const name = nameNode.text;
+      if (!isExtension) declaredTypes.push(name);
+      pushEntity(mkEntity("class", relPath, name, child, !swiftPrivate(child)));
+      const body = children(child).find((c) => c.type === "class_body" || c.type === "enum_class_body");
+      if (body) {
+        for (const m of children(body)) {
+          if (m.type !== "function_declaration") continue;
+          const mn = swiftFnName(m);
+          if (mn) pushEntity(mkEntity("function", relPath, `${name}.${mn}`, m, !swiftPrivate(m)));
+        }
+      }
+    } else if (child.type === "protocol_declaration") {
+      const name = child.childForFieldName("name")?.text;
+      if (!name) continue;
+      declaredTypes.push(name);
+      pushEntity(mkEntity("class", relPath, name, child, !swiftPrivate(child)));
+      const body = children(child).find((c) => c.type === "protocol_body");
+      if (body) {
+        for (const m of children(body)) {
+          if (m.type !== "protocol_function_declaration") continue;
+          const mn = swiftFnName(m);
+          if (mn) pushEntity(mkEntity("function", relPath, `${name}.${mn}`, m, true));
+        }
+      }
+    } else if (child.type === "function_declaration") {
+      const name = swiftFnName(child);
+      if (name) pushEntity(mkEntity("function", relPath, name, child, !swiftPrivate(child)));
+    }
+  }
+
+  collectSwiftTypeRefs(root, typeRefs);
+}
+
+// type usages: every type_identifier (annotations, return types, inheritance,
+// extension targets) plus constructor-call callees — idiomatic `let p = Point(...)`
+// carries no type_identifier node. names not declared in-repo get dropped later.
+function collectSwiftTypeRefs(root: TSNode, out: string[]): void {
+  const seen = new Set<string>();
+  const stack: TSNode[] = [root];
+  while (stack.length) {
+    const n = stack.pop()!;
+    if (n.type === "type_identifier") {
+      seen.add(n.text);
+    } else if (n.type === "call_expression") {
+      const callee = namedChildren(n)[0];
+      if (callee?.type === "simple_identifier") seen.add(callee.text);
+    }
+    for (const c of namedChildren(n)) stack.push(c);
+  }
+  out.push(...[...seen].sort());
 }
 
 function collectPyImports(node: TSNode, imports: ImportRequest[]): void {

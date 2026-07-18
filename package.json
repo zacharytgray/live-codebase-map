@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "d3": "^7.9.0",
     "tree-sitter-javascript": "0.25.0",
     "tree-sitter-python": "0.25.0",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "tree-sitter-cli": "^0.26.11",
     "typescript": "^5.6.0"
   }
 }

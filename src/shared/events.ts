@@ -1,8 +1,9 @@
 // event types + envelope builder. mirrors docs/event-schema.md (frozen v1).
 
 export type EntityType = "module" | "file" | "class" | "function";
-export type EdgeType = "imports" | "calls" | "defines";
+export type EdgeType = "imports" | "calls" | "defines" | "references";
 export type EventKind = "entity.observed" | "entity.changed" | "edge.changed" | "annotation";
+export type EventSource = "agent-hook" | "scan";
 
 export interface Turn {
   session_id: string;
@@ -25,11 +26,13 @@ export interface Edge {
   type: EdgeType;
 }
 
+// session_id/turn_id null together -> turn: null (scan baselines have no turn)
 export interface EventCtx {
-  session_id: string;
-  turn_id: number;
+  session_id: string | null;
+  turn_id: number | null;
   branch: string | null;
   commit: string | null;
+  source?: EventSource; // default agent-hook
 }
 
 // crockford base32, for ulid-style sortable ids
@@ -61,8 +64,11 @@ export function makeEvent(
     v: 0,
     id: genId(),
     ts: isoSeconds(),
-    source: "agent-hook",
-    turn: { session_id: ctx.session_id, turn_id: ctx.turn_id },
+    source: ctx.source ?? "agent-hook",
+    turn:
+      ctx.session_id !== null && ctx.turn_id !== null
+        ? { session_id: ctx.session_id, turn_id: ctx.turn_id }
+        : null,
     branch: ctx.branch,
     commit: ctx.commit,
     kind,

@@ -9,7 +9,7 @@
   "v": 0,
   "id": "evt_01J...",
   "ts": "2026-07-16T14:03:22Z",
-  "source": "agent-hook | file-watcher | consolidation | human",
+  "source": "agent-hook | file-watcher | consolidation | human | scan",
   "turn": {"session_id": "abc123", "turn_id": 47},
   "branch": "main",
   "commit": "9f3c2a1 | null",
@@ -38,9 +38,9 @@ Entity types (deliberately small): `module` (directory), `file`, `class`, `funct
 
 **`entity.changed`** — `{"change": "added | modified | removed | renamed", "entity_id": ..., "prev_id": "<for renames>", "delta_loc": 12}`
 
-**`edge.changed`** — `{"change": "added | removed", "edge": {"from": "<entity_id>", "to": "<entity_id>", "type": "imports | calls | defines"}}`
+**`edge.changed`** — `{"change": "added | removed", "edge": {"from": "<entity_id>", "to": "<entity_id>", "type": "imports | calls | defines | references"}}`
 
-Edge types start with these three. `calls` is best-effort from tree-sitter (no type resolution); that's fine — the map is a study aid, not a compiler.
+Edge types: `imports`, `defines` (v1); `calls` (backlog); `references` (added 2026-07-18, additive/non-breaking) — cross-file type references via best-effort name matching, for languages whose same-module files share symbols without imports (Swift). A reference edge is emitted file→file only when the referenced type is declared in exactly one other repo file; ambiguous names are skipped. Best-effort, no type resolution — the map is a study aid, not a compiler.
 
 ### Semantic (Layer 2 — harvested, zero marginal tokens)
 
@@ -82,3 +82,4 @@ Edge types start with these three. `calls` is best-effort from tree-sitter (no t
 - Capture emits one batch per turn from the `Stop` hook; a thin `PostToolUse` buffer only accumulates touched file paths mid-turn. `source: file-watcher` is reserved but unused in v1.
 - Both annotation origins (`map-note`, `turn-text`) ship in v1 and get quality-compared after the dogfood week — the `origin` field is load-bearing, not decorative. `turn-text` comes from the Stop payload's documented `last_assistant_message` field, never from transcript parsing (format undocumented, lags at Stop time).
 - The claim-vs-change panel (revised study-mode decision) consumes `annotation` events joined against the same turn's `entity.changed`/`edge.changed` events — no new event kinds needed, which is what makes it nearly free.
+- `source: "scan"` events (added 2026-07-18): full-repo baseline capture via `codemap scan`. They carry `turn: null` and render **neutral** — a baseline is not recency, so a fresh scan must not light the whole map. Glow starts only when real turns land on top of the baseline.

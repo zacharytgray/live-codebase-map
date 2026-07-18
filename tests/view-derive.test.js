@@ -98,6 +98,48 @@ test("claim selection prefers map-note over turn-text", () => {
   assert.equal(selectClaim([]).best, null);
 });
 
+// ---- turn: null (scan) tolerance ----
+
+function scanEvent(kind, fields) {
+  return { v: 0, id: "evt_scan", ts: "2026-07-18T09:00:00Z", source: "scan", turn: null, branch: "main", commit: "c0aaaaa", kind, ...fields };
+}
+
+const SCAN_ONLY = [
+  scanEvent("entity.observed", { entity: { id: "src/a.swift", type: "file", path: "src/a.swift", name: "a.swift", span: [1, 30], loc: 30 } }),
+  scanEvent("entity.observed", { entity: { id: "src/a.swift#Foo", type: "class", path: "src/a.swift", name: "Foo", span: [1, 10], loc: 10 } }),
+  scanEvent("entity.observed", { entity: { id: "src/b.swift", type: "file", path: "src/b.swift", name: "b.swift", span: [1, 12], loc: 12 } }),
+  scanEvent("entity.changed", { change: "added", entity_id: "src/a.swift", delta_loc: 30 }),
+  scanEvent("edge.changed", { change: "added", edge: { from: "src/b.swift", to: "src/a.swift", type: "references" } }),
+];
+
+test("derive: scanned-but-never-agent-touched repo — neutral map, no turns, no crash", () => {
+  const state = derive(SCAN_ONLY);
+  assert.equal(state.empty, false);
+  assert.equal(state.turns.length, 0);
+  assert.equal(state.latestTurn, null, "empty-state claim strip: no latest turn");
+  assert.equal(state.entities.length, 3);
+  // scan grants no recency — everything renders neutral
+  for (const e of state.entities) assert.equal(e.lastTouchedSeq, -1);
+  assert.deepEqual(state.edges, [{ from: "src/b.swift", to: "src/a.swift", type: "references" }]);
+});
+
+test("derive: a scan re-observation never resets recency a real turn granted", () => {
+  const agentTouch = {
+    v: 0, id: "evt_a1", ts: "2026-07-18T10:00:00Z", source: "agent-hook",
+    turn: { session_id: "s", turn_id: 1 }, branch: "main", commit: "c1", kind: "entity.observed",
+    entity: { id: "src/a.swift", type: "file", path: "src/a.swift", name: "a.swift", span: [1, 31], loc: 31 },
+  };
+  const laterScan = scanEvent("entity.observed", {
+    entity: { id: "src/a.swift", type: "file", path: "src/a.swift", name: "a.swift", span: [1, 31], loc: 31 },
+  });
+  const laterScanChange = scanEvent("entity.changed", { change: "modified", entity_id: "src/a.swift", delta_loc: 0 });
+
+  const state = derive([agentTouch, laterScan, laterScanChange]);
+  const a = state.entities.find((e) => e.id === "src/a.swift");
+  assert.equal(a.lastTouchedSeq, 0, "recency survives the scan");
+  assert.equal(a.lastTouchedTs, "2026-07-18T10:00:00Z");
+});
+
 test("hierarchy: path-sorted, stable under sibling growth (never size-ordered)", () => {
   const base = buildHierarchy([
     { id: "a.ts", path: "a.ts", loc: 1 },

@@ -62,3 +62,15 @@ function unquote(p: string): string {
   if (t.startsWith('"') && t.endsWith('"')) return t.slice(1, -1);
   return t;
 }
+
+// tracked + untracked-but-not-ignored files, repo-relative, sorted. null if not a repo.
+export function gitListFiles(repoRoot: string): string[] | null {
+  const tracked = git(repoRoot, ["ls-files"]);
+  if (tracked == null) return null;
+  const others = git(repoRoot, ["ls-files", "--others", "--exclude-standard"]) ?? "";
+  const set = new Set<string>();
+  for (const line of (tracked + "\n" + others).split("\n")) {
+    if (line.trim()) set.add(unquote(line));
+  }
+  return [...set].sort();
+}

@@ -12,6 +12,7 @@ const installRoot = fileURLToPath(new URL("../../", import.meta.url));
 const publicDir = join(installRoot, "src", "view", "public"); // html/css/js served straight from source (no frontend build)
 const libDir = fileURLToPath(new URL("./", import.meta.url)); // dist/view — the shared pure modules the page imports
 const d3Path = join(installRoot, "node_modules", "d3", "dist", "d3.min.js");
+const dagrePath = join(installRoot, "node_modules", "@dagrejs", "dagre", "dist", "dagre.min.js");
 
 export interface ViewServer {
   server: Server;
@@ -69,7 +70,9 @@ export function startServer(opts: StartOptions): Promise<ViewServer> {
     if (url === "/style.css") return sendFile(res, join(publicDir, "style.css"));
     if (url === "/lib/decay.js") return sendFile(res, join(libDir, "decay.js"));
     if (url === "/lib/hierarchy.js") return sendFile(res, join(libDir, "hierarchy.js"));
+    if (url === "/lib/graph.js") return sendFile(res, join(libDir, "graph.js"));
     if (url === "/lib/d3.min.js") return sendFile(res, d3Path);
+    if (url === "/lib/dagre.min.js") return sendFile(res, dagrePath);
 
     res.writeHead(404, { "content-type": "text/plain" });
     res.end("not found");

@@ -6,7 +6,7 @@ import { isAbsolute, resolve, relative, sep, extname, dirname, basename, join } 
 // absolute path to this install's bin shim (used when writing hook commands)
 export const binShimPath = fileURLToPath(new URL("../../bin/codemap.js", import.meta.url));
 
-const SRC_EXTS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py"]);
+const SRC_EXTS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".swift"]);
 
 export function isSourceExt(p: string): boolean {
   return SRC_EXTS.has(extname(p));

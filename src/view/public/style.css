@@ -18,6 +18,17 @@
   --crit: #d03b3b; /* removed */
   --note: #199e70; /* map-note accent (deliberate > scraped) */
 
+  /* graph node fills: dataviz categorical palette, dark column, fixed slot order
+     (validated vs #1a1a19 — CVD floor band, so nodes always carry direct labels) */
+  --cat-1: #3987e5;
+  --cat-2: #199e70;
+  --cat-3: #c98500;
+  --cat-4: #008300;
+  --cat-5: #9085e9;
+  --cat-6: #e66767;
+  --cat-7: #d55181;
+  --cat-8: #d95926;
+
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -251,11 +262,45 @@ body {
   flex-direction: column;
   min-height: 460px;
 }
+/* graph mode gets the viewport — the page below the panel is otherwise empty */
+#treemap-wrap.graph-mode {
+  min-height: 78vh;
+}
 .map-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   margin-bottom: 8px;
+}
+.map-head .legend {
+  margin-left: auto;
+}
+
+#view-toggle {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--hair);
+  border-radius: 7px;
+  overflow: hidden;
+}
+#view-toggle button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+#view-toggle button.active {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+#view-toggle button + button {
+  border-left: 1px solid var(--hair);
 }
 .legend {
   display: flex;
@@ -290,6 +335,92 @@ body {
   font-size: 10px;
   pointer-events: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ---- graph view ---- */
+#graph {
+  width: 100%;
+  flex: 1;
+  display: block;
+  cursor: grab;
+}
+#graph:active {
+  cursor: grabbing;
+}
+#graph[hidden],
+#treemap[hidden] {
+  display: none;
+}
+#graph .gnode rect {
+  stroke: var(--hair);
+  stroke-width: 1;
+  rx: 4;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+#graph .gnode text {
+  fill: var(--ink-2);
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 2.5px;
+}
+#graph .gedge {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+#graph .gedge.references {
+  stroke-dasharray: 4 3;
+}
+#graph .arrow-head {
+  fill: var(--muted);
+}
+#graph.focus .gnode:not(.hi) {
+  opacity: 0.18;
+}
+#graph.focus .gedge {
+  opacity: 0.08;
+}
+#graph.focus .gedge.hi {
+  opacity: 0.95;
+  stroke: var(--ink-2);
+}
+.legend .edge-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.legend .edge-key .stroke {
+  display: inline-block;
+  width: 22px;
+  height: 0;
+  border-top: 2px solid var(--muted);
+}
+.legend .edge-key .stroke.dashed {
+  border-top-style: dashed;
+}
+.legend button.agg-toggle {
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 5px;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.legend button.agg-toggle:hover {
+  color: var(--ink);
+}
+.legend .counts {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
 /* tooltip */

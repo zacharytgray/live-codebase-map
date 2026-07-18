@@ -165,7 +165,14 @@ export function derive(events: RawEvent[], now: Date = new Date()): DerivedState
       case "entity.observed": {
         const e = ev.entity;
         if (!e) break;
-        entities.set(e.id, { ...e, lastTouchedSeq: seq, lastTouchedTs: ts });
+        // scan events (turn null, seq -1) render neutral: refresh the shape but
+        // never grant recency — and never erase recency a real turn already gave
+        const prev = entities.get(e.id);
+        if (seq < 0 && prev) {
+          entities.set(e.id, { ...e, lastTouchedSeq: prev.lastTouchedSeq, lastTouchedTs: prev.lastTouchedTs });
+        } else {
+          entities.set(e.id, { ...e, lastTouchedSeq: seq, lastTouchedTs: ts });
+        }
         break;
       }
       case "entity.changed": {
@@ -175,7 +182,7 @@ export function derive(events: RawEvent[], now: Date = new Date()): DerivedState
           entities.delete(id);
         } else {
           const cur = entities.get(id);
-          if (cur) {
+          if (cur && seq >= 0) {
             cur.lastTouchedSeq = seq;
             cur.lastTouchedTs = ts;
           }

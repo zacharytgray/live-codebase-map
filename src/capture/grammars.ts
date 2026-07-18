@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { dirname, join, extname } from "node:path";
 import { Parser, Language } from "web-tree-sitter";
 
@@ -10,14 +11,19 @@ function wasmDir(pkg: string): string {
   return dirname(require.resolve(pkg + "/package.json"));
 }
 
+// swift wasm is vendored (built with tree-sitter-cli; the tree-sitter-wasms prebuilt
+// carries the legacy `dylink` ABI that web-tree-sitter 0.26 rejects — see vendor/README.md)
+const vendorDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "vendor");
+
 const WASM: Record<Grammar, string> = {
   typescript: join(wasmDir("tree-sitter-typescript"), "tree-sitter-typescript.wasm"),
   tsx: join(wasmDir("tree-sitter-typescript"), "tree-sitter-tsx.wasm"),
   javascript: join(wasmDir("tree-sitter-javascript"), "tree-sitter-javascript.wasm"),
   python: join(wasmDir("tree-sitter-python"), "tree-sitter-python.wasm"),
+  swift: join(vendorDir, "tree-sitter-swift.wasm"),
 };
 
-export type Grammar = "typescript" | "tsx" | "javascript" | "python";
+export type Grammar = "typescript" | "tsx" | "javascript" | "python" | "swift";
 
 export function grammarForExt(ext: string): Grammar | null {
   switch (ext.toLowerCase()) {
@@ -32,6 +38,8 @@ export function grammarForExt(ext: string): Grammar | null {
       return "javascript";
     case ".py":
       return "python";
+    case ".swift":
+      return "swift";
     default:
       return null;
   }

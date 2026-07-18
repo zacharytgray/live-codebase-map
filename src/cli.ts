@@ -18,12 +18,16 @@ export async function main(argv: string[]): Promise<void> {
     const files = Number(getFlag(args, "--files") ?? "10");
     return runBench(repo, Number.isFinite(files) && files > 0 ? files : 10);
   }
+  if (cmd === "scan") {
+    const { runScan } = await import("./capture/scan.js");
+    return runScan(getFlag([sub, ...rest], "--repo"));
+  }
   if (cmd === "view") {
     const { runView } = await import("./view/server.js");
     return runView([sub, ...rest]);
   }
 
-  console.log("usage: codemap <hook post-tool-use | hook stop | init [--repo <path>] | bench --repo <path> --files <n> | view [--repo <path>] [--port <n>] [--open]>");
+  console.log("usage: codemap <hook post-tool-use | hook stop | init [--repo <path>] | scan [--repo <path>] | bench --repo <path> --files <n> | view [--repo <path>] [--port <n>] [--open]>");
 }
 
 // ---- hook entry points: always exit 0, never write to stdout on success ----

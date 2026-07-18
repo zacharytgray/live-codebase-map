@@ -6,6 +6,7 @@
     <title>codemap</title>
     <link rel="stylesheet" href="/style.css" />
     <script src="/lib/d3.min.js"></script>
+    <script src="/lib/dagre.min.js"></script>
   </head>
   <body>
     <main id="app">
@@ -36,9 +37,21 @@
         <div id="treemap-wrap" class="panel">
           <div class="map-head">
             <span class="col-head">repository</span>
+            <div id="view-toggle" role="group" aria-label="view mode">
+              <button data-mode="map" class="active">map</button>
+              <button data-mode="graph">graph</button>
+            </div>
             <span id="legend" class="legend"></span>
           </div>
           <svg id="treemap"></svg>
+          <svg id="graph" hidden>
+            <defs>
+              <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0.5 L7.5,4 L0,7.5 z" class="arrow-head" />
+              </marker>
+            </defs>
+            <g id="graph-root"></g>
+          </svg>
         </div>
       </section>
     </main>

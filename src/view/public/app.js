@@ -1,10 +1,14 @@
-// live codebase map — plain es module. shares decay + hierarchy with the server
-// (one implementation, served from /lib). d3 is the UMD global from /lib/d3.min.js.
+// live codebase map — plain es module. shares decay + hierarchy + graph with the
+// server (one implementation, served from /lib). d3/dagre are UMD globals.
 import { glow, DECAY_TURNS } from "/lib/decay.js";
 import { buildHierarchy } from "/lib/hierarchy.js";
+import { buildGraphData, layoutGraph } from "/lib/graph.js";
 
 const d3 = window.d3;
 let lastState = null;
+let viewMode = localStorage.getItem("codemap-view") || "map";
+let graphExpand = null; // aggregation override: null = auto (>150 files groups by dir)
+let graphHideTests = true; // test files shred the layout; hidden by default
 
 // ---- helpers ----
 const $ = (sel) => document.querySelector(sel);
@@ -81,20 +85,47 @@ fetch("/api/state")
   .catch(() => {});
 connect();
 
+// ---- view mode toggle ----
+for (const btn of document.querySelectorAll("#view-toggle button")) {
+  btn.classList.toggle("active", btn.dataset.mode === viewMode);
+  btn.addEventListener("click", () => {
+    viewMode = btn.dataset.mode;
+    localStorage.setItem("codemap-view", viewMode);
+    for (const b of document.querySelectorAll("#view-toggle button")) {
+      b.classList.toggle("active", b.dataset.mode === viewMode);
+    }
+    tel({ type: "click", target: "view-" + viewMode });
+    if (lastState) renderMapArea(lastState);
+  });
+}
+
 // ---- render ----
 function render(state) {
   lastState = state;
   renderClaimStrip(state);
   renderCvc(state);
   renderThisTurn(state);
-  renderTreemap(state);
+  renderMapArea(state);
+}
+
+function renderMapArea(state) {
+  const mapMode = viewMode === "map";
+  document.getElementById("treemap").toggleAttribute("hidden", !mapMode);
+  document.getElementById("graph").toggleAttribute("hidden", mapMode);
+  // graph mode claims the viewport; the treemap keeps its compact panel
+  document.getElementById("treemap-wrap").classList.toggle("graph-mode", !mapMode);
+  if (mapMode) renderTreemap(state);
+  else renderGraph(state);
 }
 
 function renderClaimStrip(state) {
   const line = $("#claim-line");
   const meta = $("#claim-meta");
   if (state.empty || !state.latestTurn) {
-    line.innerHTML = `<span class="empty">no turns captured yet — the map fills in once the agent finishes a turn that changes code.</span>`;
+    // a scanned-but-never-agent-touched repo has entities but no turns
+    line.innerHTML = state.entities && state.entities.length
+      ? `<span class="empty">no agent turns yet — showing the scanned baseline. claims fill in when a turn lands.</span>`
+      : `<span class="empty">no turns captured yet — the map fills in once the agent finishes a turn that changes code.</span>`;
     meta.innerHTML = "";
     return;
   }
@@ -189,7 +220,16 @@ function renderThisTurn(state) {
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => lastState && renderTreemap(lastState), 150);
+  resizeTimer = setTimeout(() => {
+    if (!lastState) return;
+    if (viewMode === "map") {
+      renderTreemap(lastState);
+    } else if (!userZoomed) {
+      // refit width unless the user has taken over the viewport
+      graphFitted = false;
+      renderGraph(lastState);
+    }
+  }, 150);
 });
 
 function renderTreemap(state) {
@@ -243,6 +283,175 @@ function renderTreemap(state) {
   $("#legend").innerHTML = `older <span class="ramp"></span> touched this turn · decays over ${DECAY_TURNS} turns`;
 }
 
+// ---- graph: dagre layered layout, dependency arrows, glow halo ----
+let zoomBehavior = null;
+let graphFitted = false;
+let userZoomed = false;
+
+function glowOf(seq, latestSeq) {
+  return seq < 0 ? 0 : glow(latestSeq - seq);
+}
+
+function renderGraph(state) {
+  const svg = d3.select("#graph");
+  const root = d3.select("#graph-root");
+  root.selectAll("*").remove();
+
+  const files = state.entities
+    .filter((e) => e.type === "file")
+    .map((e) => ({ id: e.id, path: e.path, loc: e.loc, seq: e.lastTouchedSeq }));
+  if (files.length === 0) {
+    renderGraphLegend(null);
+    return;
+  }
+
+  const opts = { hideTests: graphHideTests };
+  if (graphExpand !== null) opts.aggregate = !graphExpand;
+  const data = buildGraphData(files, state.edges, opts);
+  const layout = layoutGraph(window.dagre, data);
+
+  const latestSeq = state.turns.length ? state.turns[state.turns.length - 1].seq : 0;
+  const interp = d3.interpolateRgb(cssVar("--grid"), cssVar("--glow-hot"));
+
+  // fill = categorical color by directory group, fixed slot order by sorted
+  // group name; groups past slot 8 fold to muted (never cycle hues)
+  const groups = [...new Set(data.nodes.map((n) => n.group))].sort();
+  const groupColor = (gr) => {
+    const i = groups.indexOf(gr);
+    return i >= 0 && i < 8 ? cssVar(`--cat-${i + 1}`) : cssVar("--muted");
+  };
+
+  // adjacency for hover highlight
+  const nbr = new Map();
+  const link = (a, b) => {
+    if (!nbr.has(a)) nbr.set(a, new Set());
+    nbr.get(a).add(b);
+  };
+  for (const e of layout.edges) {
+    link(e.from, e.to);
+    link(e.to, e.from);
+  }
+
+  const line = d3.line().x((p) => p.x).y((p) => p.y).curve(d3.curveBasis);
+  root
+    .selectAll("path.gedge")
+    .data(layout.edges)
+    .join("path")
+    .attr("class", (d) => "gedge" + (d.types.includes("imports") ? "" : " references"))
+    .attr("d", (d) => line(d.points))
+    .attr("marker-end", "url(#arrow)");
+
+  const g = root
+    .selectAll("g.gnode")
+    .data(layout.nodes)
+    .join("g")
+    .attr("class", "gnode")
+    .attr("transform", (d) => `translate(${d.x - d.w / 2},${d.y - d.h / 2})`);
+
+  g.append("rect")
+    .attr("width", (d) => d.w)
+    .attr("height", (d) => d.h)
+    .attr("rx", 4)
+    .attr("fill", (d) => groupColor(d.group))
+    .attr("stroke", (d) => {
+      const gl = glowOf(d.seq, latestSeq);
+      return gl > 0 ? interp(gl) : cssVar("--hair");
+    })
+    .attr("stroke-width", (d) => {
+      const gl = glowOf(d.seq, latestSeq);
+      return gl > 0 ? 1.5 + 2.5 * gl : 1;
+    });
+
+  // label below the node: readable on the surface instead of fighting the fill
+  // color inside small chips. 15ch at 10px fits the 58+44 rank pitch.
+  g.append("text")
+    .attr("x", (d) => d.w / 2)
+    .attr("y", (d) => d.h + 12)
+    .text((d) => (d.label.length > 15 ? d.label.slice(0, 14) + "…" : d.label));
+
+  g.on("mouseenter", (ev, d) => {
+    svg.classed("focus", true);
+    root.selectAll("g.gnode").classed("hi", (n) => n.id === d.id || (nbr.get(d.id) ?? new Set()).has(n.id));
+    root.selectAll("path.gedge").classed("hi", (e) => e.from === d.id || e.to === d.id);
+  })
+    .on("mouseleave", () => {
+      svg.classed("focus", false);
+      root.selectAll(".hi").classed("hi", false);
+      hideTip();
+    })
+    .on("mousemove", (ev, d) => showGraphTip(ev, d, state))
+    .on("click", (ev, d) => {
+      if (d.files !== 1) return; // directory rollups have no file detail
+      tel({ type: "click", target: "file" });
+      openDetail(d.id);
+    });
+
+  // pan/zoom; transform survives SSE re-renders, refitted on structure toggles.
+  // fit WIDTH only, never height — a tall layout is panned, not shrunk to confetti.
+  const svgNode = svg.node();
+  if (!zoomBehavior) {
+    zoomBehavior = d3.zoom().scaleExtent([0.15, 4]).on("zoom", (ev) => {
+      if (ev.sourceEvent) userZoomed = true; // manual pan/zoom wins over auto-refit
+      root.attr("transform", ev.transform);
+    });
+    svg.call(zoomBehavior);
+  }
+  if (!graphFitted) {
+    graphFitted = true;
+    const vw = svgNode.clientWidth || 800;
+    const k = Math.min(1, vw / (layout.width + 20));
+    const tx = (vw - layout.width * k) / 2;
+    svg.call(zoomBehavior.transform, d3.zoomIdentity.translate(Math.max(0, tx), 8).scale(k));
+  }
+
+  renderGraphLegend(data, layout.edges.length);
+}
+
+function renderGraphLegend(data, edgeCount) {
+  let html =
+    `<span class="edge-key"><span class="stroke"></span>imports</span>` +
+    `<span class="edge-key"><span class="stroke dashed"></span>references</span>` +
+    `<span>halo = touched recently</span>`;
+  if (data) {
+    html += `<span class="counts">${data.aggregated ? `${data.nodes.length} dirs` : `${data.fileCount} files`} · ${edgeCount} edges</span>`;
+    if (data.hiddenTests > 0 || !graphHideTests) {
+      html += `<button class="agg-toggle tests-toggle">${graphHideTests ? `show ${data.hiddenTests} test files` : "hide test files"}</button>`;
+    }
+    if (data.aggregated || data.fileCount > 150) {
+      html += `<button class="agg-toggle expand-toggle">${data.aggregated ? `expand to ${data.fileCount} files` : "group by directory"}</button>`;
+    }
+  }
+  $("#legend").innerHTML = html;
+  const testsBtn = $("#legend .tests-toggle");
+  if (testsBtn) {
+    testsBtn.addEventListener("click", () => {
+      graphHideTests = !graphHideTests;
+      graphFitted = false; // structure change -> refit
+      renderGraph(lastState);
+    });
+  }
+  const expandBtn = $("#legend .expand-toggle");
+  if (expandBtn && data) {
+    expandBtn.addEventListener("click", () => {
+      graphExpand = data.aggregated;
+      graphFitted = false;
+      renderGraph(lastState);
+    });
+  }
+}
+
+function showGraphTip(ev, d, state) {
+  const sub = [];
+  if (d.files !== 1) sub.push(`${d.files} files`);
+  sub.push(`${d.loc} loc`);
+  const e = state.entities.find((x) => x.id === d.id);
+  if (e && e.lastTouchedSeq >= 0) sub.push(`touched ${relTime(e.lastTouchedTs)}`);
+  tip.innerHTML = `<div class="tt-path">${esc(d.id)}</div><div class="tt-sub">${esc(sub.join(" · "))}</div>`;
+  tip.hidden = false;
+  tip.style.left = Math.min(ev.clientX + 12, window.innerWidth - 330) + "px";
+  tip.style.top = ev.clientY + 12 + "px";
+}
+
 // ---- tooltip ----
 const tip = $("#tooltip");
 function showTip(ev, d, state) {
@@ -267,6 +476,8 @@ function openDetail(path) {
     .sort((a, b) => a.span[0] - b.span[0]);
   const importsOut = state.edges.filter((e) => e.type === "imports" && e.from === path);
   const importsIn = state.edges.filter((e) => e.type === "imports" && e.to === path);
+  const refsOut = state.edges.filter((e) => e.type === "references" && e.from === path);
+  const refsIn = state.edges.filter((e) => e.type === "references" && e.to === path);
   const annos = state.annotations
     .filter((a) => (a.targets || []).includes(path))
     .sort((a, b) => (a.ts < b.ts ? 1 : -1));
@@ -284,6 +495,14 @@ function openDetail(path) {
   html += section("imported by", importsIn.length
     ? importsIn.map((e) => `<div class="edge-line">← ${esc(e.from)}</div>`).join("")
     : `<div class="none">none</div>`);
+
+  // swift-style cross-file type references; only shown when present
+  if (refsOut.length) {
+    html += section("references", refsOut.map((e) => `<div class="edge-line">→ ${esc(e.to)}</div>`).join(""));
+  }
+  if (refsIn.length) {
+    html += section("referenced by", refsIn.map((e) => `<div class="edge-line">← ${esc(e.from)}</div>`).join(""));
+  }
 
   html += section("recent annotations", annos.length
     ? annos.slice(0, 8).map((a) => `<div class="anno"><div class="anno-text"><span class="origin-tag ${esc(a.origin)}">${a.origin === "map-note" ? "map note" : "turn text"}</span>${esc(a.text)}</div><div class="prov">turn ${esc(shortSid(a.session_id))}/${esc(a.turn_id)} · ${esc(a.commit ?? "—")} · ${esc(relTime(a.ts))}</div></div>`).join("")

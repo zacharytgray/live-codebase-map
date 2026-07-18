@@ -10,7 +10,8 @@ import {
 } from "../shared/events.js";
 import { extractFile, toShape, type ExtractEdge } from "./extract.js";
 import { resolveImports } from "./resolve-imports.js";
-import { loadState, saveState, diffFile, toStored, type StoredEntity, type StoredEdge } from "./state.js";
+import { applyReferencePass } from "./references.js";
+import { loadState, saveState, diffFile, toStored, type StoredEntity, type StoredEdge, type FileSnapshot } from "./state.js";
 import { buildAnnotations } from "./annotations.js";
 import { readBuffer, clearBuffer, nextTurnId } from "./buffer.js";
 import { appendEvents } from "../store/jsonl.js";
@@ -110,14 +111,22 @@ export async function runStop(opts: RunStopOptions): Promise<RunStopResult> {
     // observed fires for every entity in every changed file
     for (const e of fx.entities) events.push(entityObserved(ctx, toShape(e)));
 
-    const d = diffFile(state.files[rel], { entities: nextEntities, edges: nextEdges });
+    // references edges are diffed by the reference pass below, not here — the
+    // old snapshot's references would otherwise flap removed+added every turn
+    const old = state.files[rel];
+    const oldSansRefs = old ? { ...old, edges: old.edges.filter((e) => e.type !== "references") } : undefined;
+    const d = diffFile(oldSansRefs, { entities: nextEntities, edges: nextEdges });
     for (const e of d.added) events.push(entityChanged(ctx, "added", e.id, e.loc));
     for (const m of d.modified) events.push(entityChanged(ctx, "modified", m.entity.id, m.deltaLoc));
     for (const e of d.removed) events.push(entityChanged(ctx, "removed", e.id, -e.loc));
     for (const edge of d.edgesAdded) events.push(edgeChanged(ctx, "added", edge));
     for (const edge of d.edgesRemoved) events.push(edgeChanged(ctx, "removed", edge));
 
-    state.files[rel] = { entities: nextEntities, edges: nextEdges };
+    const keptRefs = old?.edges.filter((e) => e.type === "references") ?? [];
+    const snap: FileSnapshot = { entities: nextEntities, edges: [...nextEdges, ...keptRefs] };
+    if (fx.declaredTypes.length) snap.declaredTypes = fx.declaredTypes;
+    if (fx.typeRefs.length) snap.typeRefs = fx.typeRefs;
+    state.files[rel] = snap;
   }
 
   // deleted files: remove every entity (and edge) from the prior snapshot
@@ -128,6 +137,9 @@ export async function runStop(opts: RunStopOptions): Promise<RunStopResult> {
     for (const edge of old.edges) events.push(edgeChanged(ctx, "removed", edge));
     delete state.files[rel];
   }
+
+  // resolve cross-file type references now the declared-type table is current
+  applyReferencePass(state, ctx, events);
 
   events.push(...buildAnnotations(ctx, payload.last_assistant_message ?? "", annotationTargets));
 
