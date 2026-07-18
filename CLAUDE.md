@@ -25,7 +25,7 @@ These are load-bearing. Don't trade them away for convenience:
 - **View surface: browser on a second monitor.** Auto-refreshing localhost page; the bet is that it's already on screen when the turn ends.
 - **Study mode: passive-plus-one (revised 2026-07-18).** V1 ships the delta map plus exactly one active element: the claim-vs-change juxtaposition — the agent's stated intent rendered beside the actual structural delta. Both halves are already computed in v1, so the marginal cost is one panel. No prediction prompts, no flashcards. Rationale: a purely passive v1 runs the one clean self-experiment on the variant the comprehension research already predicts fails, and a null result would be ambiguous (idea dead vs. variant weak). Open/dwell instrumentation remains hard v1 scope.
 - **Stack: TypeScript end-to-end.** Node tree-sitter bindings for capture; D3/Cytoscape for the view.
-- **Capture: Stop hook only in v1.** No file watcher yet; human-edit staleness is accepted for the self-experiment.
+- **Capture: one batch per turn at Stop, buffered by PostToolUse (amended 2026-07-18 after doc scouting).** The transcript JSONL format is undocumented and lags at Stop time — nothing may parse it. Instead: a thin `PostToolUse` hook (matcher `Edit|Write|MultiEdit|NotebookEdit`) appends `.tool_input.file_path` to a per-session buffer, and an `async: true` `Stop` hook does all real work — buffered paths + `git status --porcelain` for changed files, the documented `last_assistant_message` field for turn text. The one-batch-per-turn spirit stands; no file watcher yet.
 - **Annotations: both sources, compared.** Emit the `MAP:` note convention AND harvest turn text; every annotation carries its `origin`; the dogfood week decides which survives.
 - **Dogfood: develop here, experiment on a real repo (revised 2026-07-18).** This repo is the development test bed, but the one-week experiment runs on whatever real repo is most active that week (likely Synapse). A map of a 15-file repo trivializes layout stability, overload, and delta-radiating views — the experiment's question needs real scale and real waits. Capture only appends to `.codemap/`, so worst-case pollution is one `rm -rf`.
 - **Store is worktree-local and git-excluded in v1 (2026-07-18).** `.codemap/` goes in `.git/info/exclude` (not the observed repo's `.gitignore` — leave the observed repo untouched). Every event carries `branch` + `commit`; the view reconciles cross-branch history via provenance rather than git merging the log. The "JSONL git-merges well" argument from the research is deferred to multi-machine/team scenarios (candidate mechanism then: a dedicated ref, git-notes style). JSONL stays regardless: append-only, human-readable, trivially parseable.
@@ -33,8 +33,8 @@ These are load-bearing. Don't trade them away for convenience:
 
 ## Current phase
 
-Schema design — no implementation yet. Don't scaffold app code or add dependencies unless explicitly asked. The current deliverable is a good `docs/event-schema.md`. Build order lives in `CURRENT-TODOs.md`.
+Building v1 (since 2026-07-18). Schema is frozen — `docs/event-schema.md` is authoritative; changing it requires bumping `v` and a note there. Build order and pre-registered experiment criteria live in `CURRENT-TODOs.md`. TypeScript end-to-end; keep dependencies minimal and justified.
 
 ## How to verify
 
-Nothing to build or run yet. When code lands, replace this section with real commands (capture latency check belongs here — the budget is ~1s per turn, measured, per the prior-art baseline of 0.4s).
+Nothing runnable yet — the capture core is in progress. When it lands, replace this section with real commands (`npm test`, `npm run build`, and a measured capture-latency check — the budget is ≤1s per turn, per the prior-art baseline of 0.4s).

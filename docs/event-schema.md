@@ -1,6 +1,6 @@
-# Event Schema — draft v0
+# Event Schema — v1 (frozen 2026-07-18)
 
-*The durable store is an append-only JSONL log, one event per line, living in `.codemap/events.jsonl` inside the observed repo (one log per worktree; merged at view time). This document is the design surface — argue with it before writing code.*
+*The durable store is an append-only JSONL log, one event per line, living in `.codemap/events.jsonl` inside the observed repo (worktree-local, git-excluded). All open decisions below are resolved for v1; changes now require bumping `v` and a note here.*
 
 ## Shape of an event
 
@@ -69,14 +69,14 @@ Edge types start with these three. `calls` is best-effort from tree-sitter (no t
 ## Open decisions
 
 1. ~~One `events.jsonl` per worktree, merged at read time — or one log with a `worktree` field?~~ **Resolved 2026-07-18:** one log per worktree, worktree-local, git-excluded via `.git/info/exclude`. Events carry `branch` + `commit`; the view reconciles branch history from provenance instead of git merging the log. Multi-machine/team merging (dedicated ref?) deferred until it's real.
-2. Does `entity.observed` fire for every entity in a changed file each turn (simple, bigger log) or only on shape change (smaller, needs prior-state diffing)? Leaning: every entity in changed files; the log is cheap and it doubles as the freshness signal.
-3. Compaction story — the log grows forever by design; when does a snapshot event (`snapshot.graph`) become worth it so cold-start replay stays fast?
-4. Is `calls` worth capturing in v0, or do `imports` edges alone carry the MVP treemap/graph view?
-5. Where does the `MAP:` note convention get parsed — hook side (structured at capture) or store side (raw text event, parsed at read)? Leaning: hook side, keep the log clean.
-6. **B-readiness (new, from session 001):** the schema must not preclude an MCP query surface later. What query patterns must the SQLite cache serve cheaply — "what depends on X", "what changed since turn N", "summarize module Y's edges"? Does anything about the event shape change to support them, or is this purely an index concern?
+2. **Resolved 2026-07-18:** `entity.observed` fires for every entity in every changed file, every turn. The log is cheap, and per-entity `ts` doubles as the freshness signal — no prior-state bookkeeping needed for observation.
+3. **Deferred:** no compaction in v1. `snapshot.graph` is a reserved kind, unused. Trigger to revisit: cold-start replay > 1s or log > 10 MB on the dogfood repo.
+4. **Resolved 2026-07-18:** v1 captures `imports` + `defines` only. `calls` goes to the backlog — it's best-effort without type resolution, and nothing in the v1 view (treemap, claim-vs-change, import drill-in) needs it.
+5. **Resolved 2026-07-18:** hook side. The capture process parses `MAP:` notes and turn text into structured `annotation` events at write time; the log never contains raw unparsed blobs.
+6. **Resolved 2026-07-18:** B-readiness is purely an index concern — no event-shape change. The SQLite cache must serve three query patterns cheaply: reverse-deps within N hops of an entity (recursive CTE over edges), everything-changed-since-turn-N, and per-module edge rollups. Cache tables index on `entity_id`, `turn_id`, and edge `(from, to)`.
 
 ## v1 notes (session 001 decisions)
 
-- Capture fires on `Stop` only; `source: file-watcher` is reserved but unused in v1.
-- Both annotation origins (`map-note`, `turn-text`) ship in v1 and get quality-compared after the dogfood week — the `origin` field is load-bearing, not decorative.
+- Capture emits one batch per turn from the `Stop` hook; a thin `PostToolUse` buffer only accumulates touched file paths mid-turn. `source: file-watcher` is reserved but unused in v1.
+- Both annotation origins (`map-note`, `turn-text`) ship in v1 and get quality-compared after the dogfood week — the `origin` field is load-bearing, not decorative. `turn-text` comes from the Stop payload's documented `last_assistant_message` field, never from transcript parsing (format undocumented, lags at Stop time).
 - The claim-vs-change panel (revised study-mode decision) consumes `annotation` events joined against the same turn's `entity.changed`/`edge.changed` events — no new event kinds needed, which is what makes it nearly free.
