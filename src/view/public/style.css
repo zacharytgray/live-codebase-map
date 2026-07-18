@@ -42,9 +42,14 @@ body {
   color: var(--ink);
   font-size: 14px;
   line-height: 1.45;
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
 }
 
 #app {
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
@@ -445,24 +450,50 @@ body {
   color: var(--muted);
   margin-top: 2px;
 }
+#tooltip .tt-summary {
+  color: var(--ink-2);
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--hair);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
 
-/* ---- 4. detail sidebar ---- */
+/* ---- 4. detail sidebar: a real column that shrinks the map, never overlaps ---- */
 #detail {
-  position: fixed;
+  flex: 0 0 340px;
+  align-self: stretch;
+  position: sticky;
   top: 0;
-  right: 0;
-  width: 380px;
-  max-width: 92vw;
   height: 100vh;
   overflow-y: auto;
   background: var(--surface);
   border-left: 1px solid var(--hair);
   padding: 18px 18px 40px;
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.55);
   z-index: 30;
 }
 #detail[hidden] {
   display: none;
+}
+/* below 1100px the map is too narrow to share — fall back to an overlay */
+@media (max-width: 1099px) {
+  #detail {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 340px;
+    max-width: 92vw;
+    flex: none;
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.55);
+  }
+}
+#detail .d-section.about .about-text {
+  color: var(--ink);
+  font-size: 13.5px;
+}
+#detail .d-section.about {
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 14px;
 }
 #detail-close {
   position: absolute;

@@ -3,7 +3,7 @@
 export type EntityType = "module" | "file" | "class" | "function";
 export type EdgeType = "imports" | "calls" | "defines" | "references";
 export type EventKind = "entity.observed" | "entity.changed" | "edge.changed" | "annotation";
-export type EventSource = "agent-hook" | "scan";
+export type EventSource = "agent-hook" | "scan" | "consolidation";
 
 export interface Turn {
   session_id: string;
@@ -103,8 +103,11 @@ export function annotation(
   ctx: EventCtx,
   targets: string[],
   text: string,
-  origin: "map-note" | "turn-text" | "commit-msg",
+  origin: "map-note" | "turn-text" | "commit-msg" | "llm-summary",
   confidence: "stated" | "inferred",
+  model?: string,
 ) {
-  return makeEvent(ctx, "annotation", { targets, text, origin, confidence });
+  const fields: Record<string, unknown> = { targets, text, origin, confidence };
+  if (model !== undefined) fields.model = model; // provenance, llm-summary only
+  return makeEvent(ctx, "annotation", fields);
 }

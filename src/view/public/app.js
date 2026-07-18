@@ -446,10 +446,18 @@ function showGraphTip(ev, d, state) {
   sub.push(`${d.loc} loc`);
   const e = state.entities.find((x) => x.id === d.id);
   if (e && e.lastTouchedSeq >= 0) sub.push(`touched ${relTime(e.lastTouchedTs)}`);
-  tip.innerHTML = `<div class="tt-path">${esc(d.id)}</div><div class="tt-sub">${esc(sub.join(" · "))}</div>`;
+  const summary = e && e.summary && e.summary.text
+    ? `<div class="tt-summary">${esc(firstSentence(e.summary.text))}</div>`
+    : "";
+  tip.innerHTML = `<div class="tt-path">${esc(d.id)}</div><div class="tt-sub">${esc(sub.join(" · "))}</div>${summary}`;
   tip.hidden = false;
   tip.style.left = Math.min(ev.clientX + 12, window.innerWidth - 330) + "px";
   tip.style.top = ev.clientY + 12 + "px";
+}
+
+function firstSentence(text) {
+  const m = /^.*?[.!?](\s|$)/.exec(text.trim());
+  return (m ? m[0] : text).trim();
 }
 
 // ---- tooltip ----
@@ -466,11 +474,31 @@ function hideTip() {
   tip.hidden = true;
 }
 
-// ---- detail sidebar ----
-$("#detail-close").addEventListener("click", () => ($("#detail").hidden = true));
+// ---- detail sidebar (opens as a real column; shrinks the map, never overlaps) ----
+$("#detail-close").addEventListener("click", closeDetail);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$("#detail").hidden) closeDetail();
+});
+function closeDetail() {
+  $("#detail").hidden = true;
+  refitMapArea(); // restore full width
+}
+// the map/graph fit to #treemap-wrap width; a layout change needs the same refit
+// path the window-resize handler uses (graph respects the manual-zoom guard).
+function refitMapArea() {
+  requestAnimationFrame(() => {
+    if (!lastState) return;
+    if (viewMode === "map") renderTreemap(lastState);
+    else if (!userZoomed) {
+      graphFitted = false;
+      renderGraph(lastState);
+    }
+  });
+}
 function openDetail(path) {
   const state = lastState;
   if (!state) return;
+  const fileEnt = state.entities.find((e) => e.type === "file" && e.path === path);
   const syms = state.entities
     .filter((e) => e.path === path && e.type !== "file")
     .sort((a, b) => a.span[0] - b.span[0]);
@@ -479,10 +507,11 @@ function openDetail(path) {
   const refsOut = state.edges.filter((e) => e.type === "references" && e.from === path);
   const refsIn = state.edges.filter((e) => e.type === "references" && e.to === path);
   const annos = state.annotations
-    .filter((a) => (a.targets || []).includes(path))
+    .filter((a) => (a.targets || []).includes(path) && a.origin !== "llm-summary")
     .sort((a, b) => (a.ts < b.ts ? 1 : -1));
 
   let html = `<h3>${esc(path)}</h3>`;
+  html += aboutSection(fileEnt && fileEnt.summary);
 
   html += section("symbols", syms.length
     ? syms.map((s) => `<div class="sym"><span><span class="stype">${esc(s.type)}</span> ${esc(s.name)}</span><span class="sloc">${esc(s.loc)} loc</span></div>`).join("")
@@ -510,9 +539,20 @@ function openDetail(path) {
 
   $("#detail-body").innerHTML = html;
   $("#detail").hidden = false;
+  refitMapArea();
 }
 function section(title, inner) {
   return `<div class="d-section"><h4>${esc(title)}</h4>${inner}</div>`;
+}
+function aboutSection(summary) {
+  if (!summary) {
+    return section("about", `<div class="none">no summary yet — run codemap summarize</div>`);
+  }
+  const prov = [summary.model, summary.commit, summary.ts ? relTime(summary.ts) : null]
+    .filter(Boolean)
+    .map((p) => esc(p))
+    .join(" · ");
+  return `<div class="d-section about"><h4>about</h4><div class="about-text">${esc(summary.text)}</div>${prov ? `<div class="prov">${prov}</div>` : ""}</div>`;
 }
 
 // ---- freshness stamp ticks every second ----

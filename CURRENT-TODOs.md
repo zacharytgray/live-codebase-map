@@ -31,6 +31,13 @@
 - [x] Graph view — Map/Graph toggle, dagre layered layout, dir-colored nodes, imports+references arrows, hover neighborhood highlight, hide-tests filter (default on), fit-to-width + pan
 - [x] Verified on HyprMac: 92 files scanned in 892ms; graph readable at 72 nodes / 173 edges with tests hidden
 
+### V1.2 (landed 2026-07-18 — Zach's second feedback round)
+
+- [x] `codemap summarize` — opt-in Layer-3 per-file LLM summaries (origin `llm-summary`, `claude -p` haiku backend, staleness-triggered refresh); ran on HyprMac: 92/92 files, ~3.4 min, idempotent re-run confirmed
+- [x] Sidebar shares space with the map/graph (in-flow 340px column ≥1100px, overlay below)
+- [x] llm-dev integration design — `docs/llm-dev-integration.md` drafted; phasing discussion with Zach (+ Dallas) pending before any handler edits
+- Known/deferred: broader UI scaling polish (proof-of-concept phase, Zach's call)
+
 ### Pre-registered dogfood criteria (set 2026-07-18, before any code — don't move the goalposts later)
 
 - **Build v2 if:** map open during ≥50% of waits ≥60s (logged, not recalled), AND ≥3 journaled instances where the next prompt or a caught agent mistake traceably came from the map.

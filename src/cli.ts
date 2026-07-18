@@ -22,12 +22,16 @@ export async function main(argv: string[]): Promise<void> {
     const { runScan } = await import("./capture/scan.js");
     return runScan(getFlag([sub, ...rest], "--repo"));
   }
+  if (cmd === "summarize") {
+    const { runSummarize } = await import("./capture/summarize.js");
+    return runSummarize([sub, ...rest]);
+  }
   if (cmd === "view") {
     const { runView } = await import("./view/server.js");
     return runView([sub, ...rest]);
   }
 
-  console.log("usage: codemap <hook post-tool-use | hook stop | init [--repo <path>] | scan [--repo <path>] | bench --repo <path> --files <n> | view [--repo <path>] [--port <n>] [--open]>");
+  console.log("usage: codemap <hook post-tool-use | hook stop | init [--repo <path>] | scan [--repo <path>] | summarize [--repo <path>] [--model <id>] [--limit <n>] [--dry-run] | bench --repo <path> --files <n> | view [--repo <path>] [--port <n>] [--open]>");
 }
 
 // ---- hook entry points: always exit 0, never write to stdout on success ----

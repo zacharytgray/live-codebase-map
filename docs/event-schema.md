@@ -47,10 +47,12 @@ Edge types: `imports`, `defines` (v1); `calls` (backlog); `references` (added 20
 **`annotation`** — a natural-language claim about intent, attached to entities.
 
 ```json
-{"kind": "annotation", "targets": ["src/payments/stripe.ts"], "text": "added retry wrapper around stripe client", "origin": "map-note | turn-text | commit-msg", "confidence": "stated | inferred"}
+{"kind": "annotation", "targets": ["src/payments/stripe.ts"], "text": "added retry wrapper around stripe client", "origin": "map-note | turn-text | commit-msg | llm-summary", "confidence": "stated | inferred", "model": "<only when origin is llm-summary>"}
 ```
 
 `origin` matters for the trust display: a structured `MAP:` note the agent wrote deliberately outranks a heuristic scrape of turn text.
+
+`llm-summary` (added 2026-07-18, additive): a Layer-3 consolidation product — a 1-2 sentence per-file purpose summary generated off the critical path by `codemap summarize` (human- or session-end-invoked, never by capture hooks). Carries `source: "consolidation"`, `turn: null`, and a `model` field for provenance. Latest llm-summary per file wins at derive time; no supersedes bookkeeping needed.
 
 ### Maintenance
 
