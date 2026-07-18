@@ -13,6 +13,8 @@
 
 - Repo was scaffolded (README, CLAUDE.md, event-schema draft) before llm-dev init; the in-place template update skipped existing files cleanly, so nothing was clobbered.
 - Structured decision quiz (AskUserQuestion, 4 forks per round) moved planning fast: 8 decisions locked in two rounds. Zach engaged with the trade-off descriptions directly.
+- Scout-before-build paid off twice on 2026-07-18: (1) docs scout found the transcript format is undocumented + lags at Stop, forcing the PostToolUse-buffer amendment BEFORE any code assumed transcript parsing; (2) tree-sitter scout empirically reproduced the native-binding build failure on Node 26, avoiding a dead-end dependency. Both scouts ran in parallel; ~5 min wall clock.
+- Orchestrator/implementer split (Fable orchestrating, Opus subagents): capture core landed in one shot, 27 tests, ~0.2s/turn; view landed in one shot, 37 tests total. Fresh-context verifier caught one real design flaw the implementer missed (span in the change predicate → line-shift churn in claim-vs-change); fixed at orchestrator level with a regression test.
 
 ## Lessons Learned
 

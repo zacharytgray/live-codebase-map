@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "d3": "^7.9.0",
     "tree-sitter-javascript": "0.25.0",
     "tree-sitter-python": "0.25.0",
     "tree-sitter-typescript": "0.23.2",

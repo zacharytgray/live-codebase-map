@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>codemap</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/lib/d3.min.js"></script>
+  </head>
+  <body>
+    <main id="app">
+      <!-- 1. claim strip -->
+      <header id="claim-strip" class="panel">
+        <div id="claim-line">loading…</div>
+        <div id="claim-meta" class="meta"></div>
+      </header>
+
+      <!-- 2. claim vs change -->
+      <section id="cvc" class="panel" data-tel="panel">
+        <div class="cvc-col" id="cvc-claim">
+          <h2 class="col-head">claim</h2>
+          <div id="claim-body" class="col-body"></div>
+        </div>
+        <div class="cvc-col" id="cvc-change">
+          <h2 class="col-head">what changed this turn</h2>
+          <div id="change-body" class="col-body"></div>
+        </div>
+      </section>
+
+      <!-- 3. ordered treemap + this-turn list -->
+      <section id="map-section">
+        <div id="this-turn" class="panel" data-tel="panel">
+          <h2 class="col-head">this turn</h2>
+          <ul id="this-turn-list"></ul>
+        </div>
+        <div id="treemap-wrap" class="panel">
+          <div class="map-head">
+            <span class="col-head">repository</span>
+            <span id="legend" class="legend"></span>
+          </div>
+          <svg id="treemap"></svg>
+        </div>
+      </section>
+    </main>
+
+    <!-- 4. detail sidebar (opens on file click) -->
+    <aside id="detail" hidden>
+      <button id="detail-close" aria-label="close">×</button>
+      <div id="detail-body"></div>
+    </aside>
+
+    <div id="tooltip" hidden></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

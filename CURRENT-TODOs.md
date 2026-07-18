@@ -19,9 +19,9 @@
 1. [x] Freeze event schema — all open decisions resolved 2026-07-18 (`docs/event-schema.md` is authoritative)
 2. [x] Capture: PostToolUse path buffer + async Stop hook → web-tree-sitter diff → `.codemap/events.jsonl` — landed 2026-07-18, 27 tests, ~0.2s end-to-end for a 10-file turn, independently verified
 3. [x] Annotations: `MAP:` + `last_assistant_message` harvester, both origin-tagged — landed with step 2
-4. [ ] View: local server + page — claim strip on top, claim-vs-change panel, ordered treemap with glow/decay, delta-first
-5. [ ] Instrumentation: log view opens + dwell time (hard v1 scope — this data decides the rest of study mode)
-6. [ ] Develop against this repo; run the one-week experiment on the most active real repo that week (likely Synapse)
+4. [x] View: `codemap view` server + page (claim strip, claim-vs-change, stable ordered treemap with glow/decay, SSE live updates) — landed 2026-07-18, independently verified
+5. [x] Instrumentation: opens/heartbeat-dwell/visibility/clicks → `.codemap/telemetry.jsonl` — landed with step 4
+6. [ ] Develop against this repo (hooks installed 2026-07-18); run the one-week experiment on the most active real repo that week (likely Synapse)
 7. [ ] Score against the pre-registered criteria below; annotation-quality comparison (MAP: vs harvested) → go/no-go on full study-mode layer
 
 ### Pre-registered dogfood criteria (set 2026-07-18, before any code — don't move the goalposts later)
