@@ -1,0 +1,24 @@
+{
+  "name": "live-codebase-map",
+  "version": "0.1.0",
+  "description": "Turn coding-agent wait time into codebase understanding: near-free capture, append-only store, delta-first map view.",
+  "type": "module",
+  "bin": {
+    "codemap": "bin/codemap.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "tree-sitter-javascript": "0.25.0",
+    "tree-sitter-python": "0.25.0",
+    "tree-sitter-typescript": "0.23.2",
+    "web-tree-sitter": "0.26.11"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.6.0"
+  }
+}

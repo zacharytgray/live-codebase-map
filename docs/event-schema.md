@@ -18,7 +18,9 @@
 }
 ```
 
-- `v` — schema version, bump on breaking change.
+- `v` — schema version, bump on breaking change. Currently `0`; "v1" in this doc's title is the product milestone, not this field.
+- `loc` is the inclusive line count: `span[1] - span[0] + 1` (corrected 2026-07-18 — the original example implied exclusive, which yields 0 for one-liners).
+- `entity.changed{modified}` fires on content-hash change only — a pure position shift (lines inserted above) is not a modification; fresh positions ride on `entity.observed`.
 - `turn` is null for file-watcher events (human edits outside the agent).
 - `commit` is the HEAD at capture time; null if the repo is dirty-only. Provenance = `(turn, commit, ts)` — every rendered fact must be traceable to these.
 
@@ -29,7 +31,7 @@
 **`entity.observed`** — an entity exists (or was re-confirmed) with current shape.
 
 ```json
-{"kind": "entity.observed", "entity": {"id": "src/payments/stripe.ts#retryWrapper", "type": "function", "path": "src/payments/stripe.ts", "name": "retryWrapper", "span": [12, 48], "loc": 36}}
+{"kind": "entity.observed", "entity": {"id": "src/payments/stripe.ts#retryWrapper", "type": "function", "path": "src/payments/stripe.ts", "name": "retryWrapper", "span": [12, 48], "loc": 37}}
 ```
 
 Entity types (deliberately small): `module` (directory), `file`, `class`, `function`. Resist adding more until the view needs them.

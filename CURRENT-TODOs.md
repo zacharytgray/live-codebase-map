@@ -17,8 +17,8 @@
 ### V1 build order
 
 1. [x] Freeze event schema — all open decisions resolved 2026-07-18 (`docs/event-schema.md` is authoritative)
-2. [ ] Capture: PostToolUse path buffer + async Stop hook → changed-file detection (buffer ∪ `git status --porcelain`) → web-tree-sitter diff → `.codemap/events.jsonl` (budget ≤1s per turn, measured; `.codemap/` via `.git/info/exclude`)
-3. [ ] Annotations: `MAP:` convention line for the observed repo's CLAUDE.md + `last_assistant_message` harvester, both origin-tagged
+2. [x] Capture: PostToolUse path buffer + async Stop hook → web-tree-sitter diff → `.codemap/events.jsonl` — landed 2026-07-18, 27 tests, ~0.2s end-to-end for a 10-file turn, independently verified
+3. [x] Annotations: `MAP:` + `last_assistant_message` harvester, both origin-tagged — landed with step 2
 4. [ ] View: local server + page — claim strip on top, claim-vs-change panel, ordered treemap with glow/decay, delta-first
 5. [ ] Instrumentation: log view opens + dwell time (hard v1 scope — this data decides the rest of study mode)
 6. [ ] Develop against this repo; run the one-week experiment on the most active real repo that week (likely Synapse)

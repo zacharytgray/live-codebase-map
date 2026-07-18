@@ -37,4 +37,12 @@ Building v1 (since 2026-07-18). Schema is frozen — `docs/event-schema.md` is a
 
 ## How to verify
 
-Nothing runnable yet — the capture core is in progress. When it lands, replace this section with real commands (`npm test`, `npm run build`, and a measured capture-latency check — the budget is ≤1s per turn, per the prior-art baseline of 0.4s).
+Capture core (steps 2–3) is built. From the repo root:
+
+- `npm install` — deps are the four tree-sitter wasm packages + typescript/@types/node (native node-tree-sitter does not build on Node 26; we use `web-tree-sitter`).
+- `npm run build` — `tsc` → `dist/`.
+- `npm test` — builds, then runs the `node:test` suite (extraction, import resolution, diffing, `MAP:` parsing, and a buffer→stop integration test against a real temp git repo).
+- `npx tsc --noEmit` — typecheck only.
+- `node bin/codemap.js bench --repo <path> --files <n>` — the capture-latency check. Budget is ≤1s per turn; measured ~60ms pipeline / ~0.2s end-to-end (fresh process) for 10 changed files.
+
+Install into an observed repo with `node bin/codemap.js init --repo <path>` (creates `.codemap/`, adds it and `.claude/settings.local.json` to `.git/info/exclude`, merges the PostToolUse + Stop hooks into `.claude/settings.local.json` — local, never committable, because the hook command embeds this machine's absolute path). The view/SQLite/instrumentation layers are not built yet.
