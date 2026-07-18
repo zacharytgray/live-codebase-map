@@ -20,7 +20,7 @@
 
 ## Mistakes Made
 
-- _(none yet)_
+- Ran the decision quiz faster than Zach could give it real attention — he later said he wasn't confident in his answers and deferred to Claude's judgment (2026-07-18). For big-fork questions, fewer per round with more context beats efficient batching.
 
 ## Assumptions Proven Wrong
 
@@ -38,3 +38,4 @@
   7. Dogfood target: this repo itself, from first commit
   8. Session runs on stream `main`
 - Repo made public at https://github.com/zacharytgray/live-codebase-map per Zach's request.
+- **2026-07-18 decision review** (Zach deferred to Claude's judgment): kept shape A/B-ready, TS stack, Stop-hook capture, both-annotation comparison, browser view, main stream. Revised two: study mode passive → passive-plus-one (claim-vs-change panel ships in v1; a purely passive experiment can't distinguish "idea dead" from "variant weak"), dogfood self → develop-on-self, experiment-on-real-repo (a 15-file graph trivializes every hard rendering problem). Added three: worktree-local git-excluded store with branch-tagged events, the v1 home-screen layout, and pre-registered dogfood success/pivot/kill criteria in CURRENT-TODOs.

@@ -23,11 +23,13 @@ These are load-bearing. Don't trade them away for convenience:
 
 - **Shape: A now, B-ready schema.** V1 is the pure human view. No agent-facing code, but the event schema and SQLite cache must not preclude an MCP query surface ("what depends on X?") bolting on without migration.
 - **View surface: browser on a second monitor.** Auto-refreshing localhost page; the bet is that it's already on screen when the turn ends.
-- **Study mode: not in v1.** Passive delta map first, instrumented. Because of this, open/dwell logging is hard v1 scope, not a nice-to-have — it's what decides whether study mode gets built.
+- **Study mode: passive-plus-one (revised 2026-07-18).** V1 ships the delta map plus exactly one active element: the claim-vs-change juxtaposition — the agent's stated intent rendered beside the actual structural delta. Both halves are already computed in v1, so the marginal cost is one panel. No prediction prompts, no flashcards. Rationale: a purely passive v1 runs the one clean self-experiment on the variant the comprehension research already predicts fails, and a null result would be ambiguous (idea dead vs. variant weak). Open/dwell instrumentation remains hard v1 scope.
 - **Stack: TypeScript end-to-end.** Node tree-sitter bindings for capture; D3/Cytoscape for the view.
 - **Capture: Stop hook only in v1.** No file watcher yet; human-edit staleness is accepted for the self-experiment.
 - **Annotations: both sources, compared.** Emit the `MAP:` note convention AND harvest turn text; every annotation carries its `origin`; the dogfood week decides which survives.
-- **Dogfood: this repo itself,** from the first line of implementation code.
+- **Dogfood: develop here, experiment on a real repo (revised 2026-07-18).** This repo is the development test bed, but the one-week experiment runs on whatever real repo is most active that week (likely Synapse). A map of a 15-file repo trivializes layout stability, overload, and delta-radiating views — the experiment's question needs real scale and real waits. Capture only appends to `.codemap/`, so worst-case pollution is one `rm -rf`.
+- **Store is worktree-local and git-excluded in v1 (2026-07-18).** `.codemap/` goes in `.git/info/exclude` (not the observed repo's `.gitignore` — leave the observed repo untouched). Every event carries `branch` + `commit`; the view reconciles cross-branch history via provenance rather than git merging the log. The "JSONL git-merges well" argument from the research is deferred to multi-machine/team scenarios (candidate mechanism then: a dedicated ref, git-notes style). JSONL stays regardless: append-only, human-readable, trivially parseable.
+- **V1 home screen (2026-07-18):** top strip = the agent's claim line for the last turn (best available annotation) + turn number + freshness stamp; below it, the claim-vs-change panel (claim beside the actual touched entities/edges, glowing); below that, the ordered treemap with glow/decay overlay. Eye lands on the claim, then the glow. Three seconds should answer: what does the agent say it did, and where did it actually land.
 
 ## Current phase
 

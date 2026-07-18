@@ -11,6 +11,7 @@
   "ts": "2026-07-16T14:03:22Z",
   "source": "agent-hook | file-watcher | consolidation | human",
   "turn": {"session_id": "abc123", "turn_id": 47},
+  "branch": "main",
   "commit": "9f3c2a1 | null",
   "kind": "<see event kinds>",
   "...": "kind-specific fields"
@@ -67,7 +68,7 @@ Edge types start with these three. `calls` is best-effort from tree-sitter (no t
 
 ## Open decisions
 
-1. One `events.jsonl` per worktree, merged at read time — or one log with a `worktree` field? (Per-worktree matches the JSONL merge story and anticipates the multi-agent dashboard.)
+1. ~~One `events.jsonl` per worktree, merged at read time — or one log with a `worktree` field?~~ **Resolved 2026-07-18:** one log per worktree, worktree-local, git-excluded via `.git/info/exclude`. Events carry `branch` + `commit`; the view reconciles branch history from provenance instead of git merging the log. Multi-machine/team merging (dedicated ref?) deferred until it's real.
 2. Does `entity.observed` fire for every entity in a changed file each turn (simple, bigger log) or only on shape change (smaller, needs prior-state diffing)? Leaning: every entity in changed files; the log is cheap and it doubles as the freshness signal.
 3. Compaction story — the log grows forever by design; when does a snapshot event (`snapshot.graph`) become worth it so cold-start replay stays fast?
 4. Is `calls` worth capturing in v0, or do `imports` edges alone carry the MVP treemap/graph view?
@@ -78,3 +79,4 @@ Edge types start with these three. `calls` is best-effort from tree-sitter (no t
 
 - Capture fires on `Stop` only; `source: file-watcher` is reserved but unused in v1.
 - Both annotation origins (`map-note`, `turn-text`) ship in v1 and get quality-compared after the dogfood week — the `origin` field is load-bearing, not decorative.
+- The claim-vs-change panel (revised study-mode decision) consumes `annotation` events joined against the same turn's `entity.changed`/`edge.changed` events — no new event kinds needed, which is what makes it nearly free.
