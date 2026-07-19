@@ -53,5 +53,19 @@ Leaning: **npm package with a version pin in the plugin config**, `npx`-invoked,
 1. Does llm-dev want codemap as a hard feature or an optional enhancement? (Phasing above assumes optional-with-degradation.)
 2. Hook ownership: if both the plugin and a repo-local `codemap init` register hooks, dedupe strategy? (Probably: plugin hooks check for repo-local ones and yield.)
 3. Should the handoff's structural-delta section be generated text (deterministic, from events) inside the handoff markdown, or a link to the view filtered to that session? (Leaning: both — one paragraph + a deep link.)
-4. Multi-machine: llm-dev archives sync via git; `.codemap/` is deliberately local. Does the workspace dashboard need store sync (the deferred dedicated-ref design), or is per-machine fine for v1 of the integration?
+4. **Should `events.jsonl` be git-tracked?** (Elevated to a full discussion point 2026-07-18 — Zach + Dallas to decide. Current v1 behavior: excluded via `.git/info/exclude`. Regardless of the outcome, `state.json` stays local — derived cache, rebuildable, conflict-prone — and `telemetry.jsonl` stays local — personal behavioral data.)
+
+   **Pros of tracking:**
+   - Live architecture per branch: checkout a branch, get that branch's map; the map's history travels with the code's history, no extra sync machinery.
+   - The "why" layer becomes durable and shared: a fresh clone gets the accumulated annotations and summaries. Structure can always be re-scanned from code; the accumulated intent layer can't be reconstructed.
+   - Merges mostly work: a `.gitattributes` union merge driver concatenates both branches' events (derive already orders by timestamp), and the post-merge `codemap scan` shrinks to a small corrective delta — automatable with a `post-merge` hook.
+   - Team/multi-machine support falls out of git itself, instead of needing the dedicated-ref design.
+
+   **Cons of tracking:**
+   - Diff noise and a perpetually dirty working tree: the log churns every agent turn. `linguist-generated` collapses it in PR diffs and the union driver prevents conflicts, but both mitigations must actually be configured, and `git status` noise remains.
+   - Without the union driver, append-only files conflict at the tail on every branch merge — the naive setup is worse than either deliberate choice.
+   - A merged log is still not ground truth: it can't know how code conflicts were resolved, so scan-after-merge stays necessary; tracking only makes the correction small.
+   - Privacy: the log contains harvested agent turn-text and `MAP:` notes — committing it publishes the agent's narration of the work. Sharp for public repos; a per-repo sensitivity call.
+   - Unbounded growth in git history; every clone carries all of it (makes log compaction/snapshotting more urgent).
+   - Adds config surface: it has to be a per-repo choice at `codemap init` time (`--tracked` vs `--local`).
 5. Where do `handoff`-origin annotations land in the trust ranking relative to `map-note`? (Proposed: handoff > map-note > turn-text, since handoffs are reviewed prose.)
