@@ -1,18 +1,18 @@
 {
   "contributor": "Zachary Gray",
-  "conversation_id": null,
+  "conversation_id": "20260716-001-main-live-codebase-map-mvp-build",
   "date": "2026-07-16",
-  "ended_at": null,
+  "ended_at": "2026-07-19T03:32:50Z",
   "files": {
-    "handoff": null,
+    "handoff": "session-handoff/20260716-001-main-session-handoff.md",
     "notes": "session-notes/20260716-001-main-session-notes.md",
-    "transcript": null
+    "transcript": "transcripts/20260716-001-main-live-codebase-map-mvp-build.json"
   },
-  "model": "claude-fable-5",
+  "model": "claude-opus-4-8",
   "number": 1,
   "session_id": "8e169648-7097-4ce2-9970-ee8ba4266fd4",
   "started_at": "2026-07-16T15:46:05Z",
-  "status": "in-progress",
+  "status": "complete",
   "stream": "main",
-  "title": null
+  "title": "Live codebase map MVP build"
 }

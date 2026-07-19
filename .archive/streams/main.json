@@ -1,10 +1,10 @@
 {
   "branch": null,
-  "claim": "8e169648-7097-4ce2-9970-ee8ba4266fd4",
-  "last_handoff": null,
-  "last_touched": "2026-07-16",
+  "claim": null,
+  "last_handoff": "session-handoff/20260716-001-main-session-handoff.md",
+  "last_touched": "2026-07-18 22:32",
   "name": "Main",
-  "since": "2026-07-16T10:46Z",
+  "since": null,
   "slug": "main",
   "status": "active",
   "worktree": null

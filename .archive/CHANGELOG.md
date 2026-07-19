@@ -22,6 +22,32 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-16
+**Conversation**: 001 - Live codebase map MVP build
+**Transcript**: [20260716-001-main-live-codebase-map-mvp-build.json](transcripts/20260716-001-main-live-codebase-map-mvp-build.json)
+### Added
+- README.md
+- CLAUDE.md
+- event-schema.md
+- live-codebase-map-project.md
+- 20260716-001-main-session-notes.md
+- launch.json
+- llm-dev-integration.md
+- llm-dev-issue-draft.md
+- 20260716-001-main-session-handoff.md
+### Changed
+- Updated MEMORY.md
+- Updated CLAUDE.md
+- Updated CURRENT-TODOs.md
+- Updated event-schema.md
+- Updated 20260716-001-main-session-notes.md
+- Updated state.ts
+- Updated init.ts
+- Updated diff.test.js
+- Updated launch.json
+- Updated llm-dev-integration.md
+- Updated llm-dev-issue-draft.md
+
 ## [{{VERSION}}] - YYYY-MM-DD - {{Change Title}}
 **Branch**: `{{branch-name}}`
 **Transcript**: [###  - {{Transcript Title}}](transcripts/YYYYMMDD-transcript-name.json)

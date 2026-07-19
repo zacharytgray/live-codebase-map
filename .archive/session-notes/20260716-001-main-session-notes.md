@@ -30,6 +30,10 @@
 
 - Recommended shipping one micro-engagement element in v1; Zach chose passive-first with instrumentation instead — consistent with the METR "measure actual behavior, not vibes" caution. Instrumentation (opens/dwell logging) is therefore hard v1 scope.
 
+## Other Observations (process)
+
+- A background subagent (summarize/sidebar, first attempt) returned a **degenerate result** — no tool uses, output that looked like stray system-prompt fragments, 6.8s runtime. `git status` confirmed it had written nothing. Recovery: relaunched the identical spec fresh, second run completed normally (60 tests). Lesson: background agents occasionally no-op; always confirm working-tree state before trusting a completion, and a clean relaunch beats debugging the ghost.
+
 ## Other Observations
 
 - **First real engagement datapoint (2026-07-18):** Zach's unprompted reaction to the demo treemap — "I just see a bunch of shapes. It's really abstract… I'm having trouble seeing relationships and functionality at a glance," and he independently reinvented the dependency-graph view ("arrows showing dependencies from one function to another"). Two lessons: (1) the treemap communicates mass+recency but NOT relationships, and relationships are what a newcomer reaches for first; (2) the `imports`/`defines` edges were captured from day one but under-rendered — the data model was ahead of the view. Response: graph view promoted to first-class (Map/Graph toggle), `codemap scan` for cold-start on real repos, Swift + `references` edges so his actual codebases (HyprMac, Sidenote — both Swift) are mappable. Also worth remembering: demo-data demos undersell this tool; always show it on a repo the viewer knows.
