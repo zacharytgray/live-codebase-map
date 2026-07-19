@@ -39,6 +39,9 @@ These are load-bearing. Don't trade them away for convenience:
 - **Sidebar shares space, never overlaps (2026-07-18).** Detail sidebar opens as a real column that shrinks the map/graph area. Broader UI scaling polish is deferred — proof-of-concept phase per Zach — but overlap blocks reading the thing you clicked, so it's functional, not cosmetic.
 - **Direction: llm-dev integration (2026-07-18).** Zach + Dallas want codemap integrated into the llm-dev plugin. Design exploration lives in `docs/llm-dev-integration.md`; the load-bearing alignment is that llm-dev sessions and codemap events share `session_id`, and llm-dev's lifecycle (init-project / init-session / end-session) gives capture, viewing, and summarize-refresh natural homes.
 
+- **Session end is the LLM trigger point (2026-07-18, Zach).** Every LLM-budgeted feature (summarize today; any future consolidation) anchors to the end of a session — never during or between prompts, upholding the core constraint. Standalone, that means human-invoked; inside llm-dev, it's the end-session handler's job, right next to writing the handoff.
+- **Agents are first-class consumers (2026-07-18, Zach — shape B is now wanted).** The store serves two audiences: humans get it rendered; agents get it as query tools ("what depends on X", "what references this type", "what changed since turn N", "what is this file for"), likely via an MCP server. The B-ready schema decision pays off here — this is an additional surface over the same store, not a redesign. The human presentation layer is explicitly expected to evolve after discussions with Dallas.
+
 ## Current phase
 
 Building v1 (since 2026-07-18). Schema is frozen — `docs/event-schema.md` is authoritative; changing it requires bumping `v` and a note there. Build order and pre-registered experiment criteria live in `CURRENT-TODOs.md`. TypeScript end-to-end; keep dependencies minimal and justified.

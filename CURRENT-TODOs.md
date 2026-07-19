@@ -49,7 +49,7 @@
 ## Backlog
 
 - File watcher for human edits outside the agent (v1.x — anti-stale story)
-- MCP query surface, shape B ("what depends on this?" answered from the same store)
+- MCP query surface, shape B ("what depends on this?" answered from the same store) — **endorsed by Zach 2026-07-18**; design after the Dallas discussion; summaries/LLM features trigger at session end only
 - Multi-worktree / multi-agent dashboard (design anticipates it: per-worktree JSONL)
 - Study-mode layer: claim-vs-change panel, prediction prompts, graph-generated flashcards
 - `calls` edges, if `imports`/`references` alone proves too sparse for the drill-in view

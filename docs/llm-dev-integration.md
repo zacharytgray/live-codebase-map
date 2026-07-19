@@ -20,12 +20,16 @@ llm-dev already owns the **session lifecycle** (init-project → init-session �
 - **init-session**: print the map URL next to the session banner (optionally auto-open). The "already on your second monitor when the turn ends" bet gets institutionalized at the moment a session starts.
 - **end-session**: two natural additions, both off the critical path:
   - **Session delta → handoff.** Filter `events.jsonl` by this session's id and render a compact "structural delta" section into the handoff doc (files touched, entities added/removed, edges changed). The next session's re-entry reading then includes what *actually* changed, not just what the outgoing session claimed — claim-vs-change at the session granularity, in prose.
-  - **Summarize refresh.** `codemap summarize` runs here — "after the last major edit" is literally what end-session means. Budgeted, skippable, and the cost lands at a moment the human is already wrapping up.
+  - **Summarize refresh.** `codemap summarize` runs here — "after the last major edit" is literally what end-session means. Budgeted, skippable, and the cost lands at a moment the human is already wrapping up. Generalized principle (Zach, 2026-07-18): end-session is the trigger point for *every* LLM-powered codemap feature, since the capture path between prompts must stay zero-LLM forever.
 
 ### Phase 2 — plugin-native capture
 - The llm-dev plugin ships the PostToolUse/Stop hooks itself (plugin hook config), so any project with the plugin enabled gets capture without per-repo `codemap init`. Kills the biggest adoption friction; also centralizes the "capture outside the agent's write scope" guarantee at plugin level.
 - A `/llm-dev:map` skill: opens the view for the current project/stream, scans if no store exists.
 - Per-stream view filtering: events already carry `branch`; the view gains a stream selector fed from `.archive/streams/*.json`.
+
+### Also in scope now: agents as consumers (shape B, endorsed 2026-07-18)
+
+The store serves agents as well as humans: an MCP server exposing query tools ("what depends on X", "what references this type", "what changed since turn N", "what is this file for" via the summaries) lets a session's agent query the map instead of re-exploring the repo — capture stops being merely token-neutral and starts saving tokens. In llm-dev terms, a session could begin with the agent already holding map access as a tool. Humans get the same store rendered; agents get it queryable. How this meets llm-dev's session model is a prime Dallas-discussion topic.
 
 ### Phase 3 — the workspace dashboard (shape C, later)
 llm-dev workspaces manage many projects; codemap's per-worktree JSONL was designed to merge at read time. A workspace-level view ("what moved across all my projects this week, by session") is the multi-agent dashboard from the research, with llm-dev supplying the project registry. Also: handoff/manifest links in the view — click a turn, open the session's handoff.
